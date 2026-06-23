@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Grupo Berger · Control Comercial</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; min-height: 100vh; padding: 28px 16px; color: #0f172a; }
+
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 2.5px; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; }
+  h1 { font-size: 28px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+  /* KPIs + Funnel layout */
+  .top-section { display: grid; grid-template-columns: 1fr 260px; gap: 14px; margin-bottom: 22px; align-items: start; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 14px 10px; text-align: center; }
+  .kpi-val { font-size: 26px; font-weight: 900; line-height: 1; }
+  .kpi-label { font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Funnel */
+  .funnel-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px 14px; }
+  .funnel-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
+  .funnel-step { margin-bottom: 8px; }
+  .funnel-label-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .funnel-label { font-size: 11px; font-weight: 700; color: #475569; }
+  .funnel-count { font-size: 13px; font-weight: 900; color: #0f172a; }
+  .funnel-bar-bg { background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden; }
+  .funnel-bar { height: 8px; border-radius: 4px; transition: width .4s ease; }
+  .funnel-pct { font-size: 10px; color: #94a3b8; margin-top: 2px; text-align: right; }
+  .funnel-divider { border: none; border-top: 1px dashed #e2e8f0; margin: 10px 0; }
+
+  @media (max-width: 700px) {
+    .top-section { grid-template-columns: 1fr; }
+  }
+
+  /* Filtros */
+  .filtros { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filtro { padding: 6px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .filtro.activo { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+  /* Tabla */
+  .tabla { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+  .thead { display: grid; grid-template-columns: 2fr 1.3fr 60px 65px 90px 75px 80px; padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+  .thead div { text-align: center; }
+  .thead div:first-child, .thead div:nth-child(2) { text-align: left; }
+
+  .fila { border-bottom: 1px solid #f1f5f9; transition: background .12s; }
+  .fila:last-child { border-bottom: none; }
+  .fila-header { display: grid; grid-template-columns: 2fr 1.3fr 60px 65px 90px 75px 80px; padding: 13px 16px; align-items: center; cursor: pointer; }
+  .fila-header:hover { background: #f8fafc; }
+  .fila.abierta .fila-header { background: #f8fafc; }
+
+  .nombre { font-weight: 800; font-size: 14px; color: #0f172a; }
+  .arrow { font-size: 10px; color: #cbd5e1; margin-left: 6px; }
+  .zona { font-size: 13px; color: #475569; }
+  .num { text-align: center; font-size: 15px; font-weight: 800; color: #0f172a; }
+  .fecha { text-align: center; font-size: 12px; color: #475569; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 800; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge-verde { background: #dcfce7; color: #166534; }
+  .badge-verde .dot { background: #16a34a; }
+  .badge-amarillo { background: #fef9c3; color: #854d0e; }
+  .badge-amarillo .dot { background: #ca8a04; }
+  .badge-rojo { background: #fee2e2; color: #991b1b; }
+  .badge-rojo .dot { background: #dc2626; }
+
+  .cal-alta { color: #16a34a; font-size: 11px; font-weight: 800; text-align: center; }
+  .cal-buena { color: #2563eb; font-size: 11px; font-weight: 800; text-align: center; }
+  .cal-media { color: #ca8a04; font-size: 11px; font-weight: 800; text-align: center; }
+  .cal-baja { color: #ea580c; font-size: 11px; font-weight: 800; text-align: center; }
+  .cal-muybaja { color: #dc2626; font-size: 11px; font-weight: 800; text-align: center; }
+  .cal-nula { color: #7f1d1d; font-size: 11px; font-weight: 800; text-align: center; }
+
+  .detalle { display: none; padding: 12px 16px 16px; background: #f8fafc; border-top: 1px solid #f1f5f9; font-size: 13px; color: #475569; line-height: 1.65; }
+  .fila.abierta .detalle { display: block; }
+  .detalle strong { color: #0f172a; }
+
+  .badge-estado { text-align: center; }
+
+  .footer { font-size: 11px; color: #cbd5e1; text-align: center; margin-top: 22px; }
+
+  .oculta { display: none; }
+
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .thead, .fila-header { grid-template-columns: 1fr 1fr 50px 60px; }
+    .thead div:nth-child(5), .thead div:nth-child(6), .thead div:nth-child(7),
+    .fila-header .fecha, .fila-header .cal, .fila-header .badge-estado { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Grupo Berger · CRM</div>
+  <h1>Control de Gestión Comercial</h1>
+  <p class="sub">Actualizado al 22 de junio de 2026 · 8 asesores</p>
+
+  <div class="top-section">
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-val" style="color:#0f172a">50</div><div class="kpi-label">Total Leads</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#0f172a">53</div><div class="kpi-label">En Negociación</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#16a34a">2</div><div class="kpi-label">Activos</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#ca8a04">3</div><div class="kpi-label">Parciales</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#dc2626">3</div><div class="kpi-label">Inactivos</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#0f172a">8</div><div class="kpi-label">Asesores</div></div>
+    </div>
+
+    <!-- Embudo -->
+    <div class="funnel-card">
+      <div class="funnel-title">Embudo de ventas</div>
+
+      <div class="funnel-step">
+        <div class="funnel-label-row">
+          <span class="funnel-label">🔵 Leads</span>
+          <span class="funnel-count">50</span>
+        </div>
+        <div class="funnel-bar-bg"><div class="funnel-bar" style="width:100%;background:#3b82f6"></div></div>
+        <div class="funnel-pct">100% del total</div>
+      </div>
+
+      <div class="funnel-step">
+        <div class="funnel-label-row">
+          <span class="funnel-label">🟡 En Negociación</span>
+          <span class="funnel-count">53</span>
+        </div>
+        <div class="funnel-bar-bg"><div class="funnel-bar" style="width:100%;background:#f59e0b"></div></div>
+        <div class="funnel-pct">Pipeline activo acumulado</div>
+      </div>
+
+      <hr class="funnel-divider">
+
+      <div class="funnel-step">
+        <div class="funnel-label-row">
+          <span class="funnel-label">✅ Aut. Comercial</span>
+          <span class="funnel-count">1</span>
+        </div>
+        <div class="funnel-bar-bg"><div class="funnel-bar" style="width:2%;background:#16a34a"></div></div>
+        <div class="funnel-pct">~2% del pipeline</div>
+      </div>
+
+      <div class="funnel-step">
+        <div class="funnel-label-row">
+          <span class="funnel-label">❌ Rechazadas</span>
+          <span class="funnel-count">1</span>
+        </div>
+        <div class="funnel-bar-bg"><div class="funnel-bar" style="width:2%;background:#ef4444"></div></div>
+        <div class="funnel-pct">~2% del pipeline</div>
+      </div>
+
+      <div class="funnel-step">
+        <div class="funnel-label-row">
+          <span class="funnel-label">🏁 Vendidas</span>
+          <span class="funnel-count">—</span>
+        </div>
+        <div class="funnel-bar-bg"><div class="funnel-bar" style="width:0%;background:#0f172a"></div></div>
+        <div class="funnel-pct" style="color:#dc2626">Sin datos en los exports</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filtros">
+    <button class="filtro activo" onclick="filtrar('todos', this)">Todos</button>
+    <button class="filtro" onclick="filtrar('verde', this)">Activos</button>
+    <button class="filtro" onclick="filtrar('amarillo', this)">Parciales</button>
+    <button class="filtro" onclick="filtrar('rojo', this)">Inactivos</button>
+  </div>
+
+  <div class="tabla">
+    <div class="thead">
+      <div>Asesor</div>
+      <div>Zona</div>
+      <div>Leads</div>
+      <div>Neg.</div>
+      <div>Última act.</div>
+      <div>Calidad</div>
+      <div>Estado</div>
+    </div>
+
+    <!-- García Demian -->
+    <div class="fila" data-estado="verde">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">García Demian <span class="arrow">▼</span></div>
+        <div class="zona">Trenque Lauquen</div>
+        <div class="num">20</div>
+        <div class="num">26</div>
+        <div class="fecha">Hoy</div>
+        <div class="cal-alta">Alta</div>
+        <div class="badge-estado"><span class="badge badge-verde"><span class="dot"></span>Activo</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> Precios cargados, descripciones de usados, observaciones comerciales. Operaciones activas hoy: omar Abraham (~USD 237k), jose luis bretone (rechazada), miguel uria (tractor TM135 USD 54k).</div>
+    </div>
+
+    <!-- Goedelmann Marcelo -->
+    <div class="fila" data-estado="verde">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Goedelmann Marcelo <span class="arrow">▼</span></div>
+        <div class="zona">Gral. Villegas</div>
+        <div class="num">10</div>
+        <div class="num">11</div>
+        <div class="fecha">Hoy</div>
+        <div class="cal-alta">Alta</div>
+        <div class="badge-estado"><span class="badge badge-verde"><span class="dot"></span>Activo</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> Muy activo hoy — cargó 9 leads nuevos (tractores NH, retros, usados, cabezales Maizco). 11 negociaciones: fuerte en cabezales maiceros y girasoleros con financiación de fábrica. Operaciones destacadas: Furhr Pablo (ARS 100,5M financiado Maizco), Domingo Herck (ARS 155M con toma de usado $50M), Saino Dario (USD 130k Draper 35 pies). Isadelca con retro B95C USD 135k contado.</div>
+    </div>
+
+    <!-- Sierra Juan -->
+    <div class="fila" data-estado="amarillo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Sierra Juan <span class="arrow">▼</span></div>
+        <div class="zona">Salliqueló</div>
+        <div class="num">1</div>
+        <div class="num">6</div>
+        <div class="fecha">Hoy</div>
+        <div class="cal-media">Media</div>
+        <div class="badge-estado"><span class="badge badge-amarillo"><span class="dot"></span>Parcial</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> Activo hoy con varios registros nuevos (cisterna, girasolero, motoniveladora). 1 operación con boleto aprobado (autodescargable Comofra). Algunos sin precio ni forma de pago.</div>
+    </div>
+
+    <!-- Enríquez Ramiro -->
+    <div class="fila" data-estado="amarillo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Enríquez Ramiro <span class="arrow">▼</span></div>
+        <div class="zona">Gral. Pico</div>
+        <div class="num">0</div>
+        <div class="num">6</div>
+        <div class="fecha">19/06</div>
+        <div class="cal-baja">Baja</div>
+        <div class="badge-estado"><span class="badge badge-amarillo"><span class="dot"></span>Parcial</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> 6 negociaciones pero ninguna con precio cargado. Interés en sembradoras finas, extractoras y tolvas. Sin datos de valor ni forma de pago en ningún registro.</div>
+    </div>
+
+    <!-- Vía Tomás -->
+    <div class="fila" data-estado="amarillo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Vía Tomás <span class="arrow">▼</span></div>
+        <div class="zona">Trenque Lauquen</div>
+        <div class="num">6</div>
+        <div class="num">1</div>
+        <div class="fecha">Hoy</div>
+        <div class="cal-baja">Baja</div>
+        <div class="badge-estado"><span class="badge badge-amarillo"><span class="dot"></span>Parcial</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> Cargó leads hoy (batea, sembradora, casilla) pero sin avanzar a negociación. 1 sola negociación vacía. Aparece tu propio CUIT como lead sin asignar — probable prueba del sistema.</div>
+    </div>
+
+    <!-- Reimer Agustín -->
+    <div class="fila" data-estado="rojo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Reimer Agustín <span class="arrow">▼</span></div>
+        <div class="zona">Castex</div>
+        <div class="num">2</div>
+        <div class="num">0</div>
+        <div class="fecha">Mar/2026</div>
+        <div class="cal-muybaja">Muy baja</div>
+        <div class="badge-estado"><span class="badge badge-rojo"><span class="dot"></span>Inactivo</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> Sin ninguna negociación activa. 2 leads: uno de dic/2025 sin datos, otro de mar/2026 con proforma de paratil Dolbi USD 37.500 para crédito banco nación. Sin movimiento desde hace 3 meses.</div>
+    </div>
+
+    <!-- Campasso Martín -->
+    <div class="fila" data-estado="rojo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Campasso Martín <span class="arrow">▼</span></div>
+        <div class="zona">Castex</div>
+        <div class="num">12</div>
+        <div class="num">2</div>
+        <div class="fecha">May/2026</div>
+        <div class="cal-muybaja">Muy baja</div>
+        <div class="badge-estado"><span class="badge badge-rojo"><span class="dot"></span>Inactivo</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> 12 leads cargados en masa el 4/sep/2025, todos sin detalle ni seguimiento posterior. 2 negociaciones: Gumineti (USD 130k, última actualización may/2026) y Szeliga (vacío).</div>
+    </div>
+
+    <!-- Choppi Diego -->
+    <div class="fila" data-estado="rojo">
+      <div class="fila-header" onclick="toggle(this)">
+        <div class="nombre">Choppi Diego <span class="arrow">▼</span></div>
+        <div class="zona">Cnel. Pringles</div>
+        <div class="num">0</div>
+        <div class="num">1</div>
+        <div class="fecha">Oct/2025</div>
+        <div class="cal-nula">Nula</div>
+        <div class="badge-estado"><span class="badge badge-rojo"><span class="dot"></span>Inactivo</span></div>
+      </div>
+      <div class="detalle"><strong>Detalle:</strong> 1 único registro (Leoz Ezequiel, oct/2025) completamente vacío — sin maquinaria, precio ni forma de pago. Sin actividad en 8 meses.</div>
+    </div>
+
+  </div>
+
+  <p class="footer">Grupo Berger · Berger S.A. + Ferrero Tractores S.A. · Fuente: monday.com CRM</p>
+</div>
+
+<script>
+  function toggle(header) {
+    const fila = header.parentElement;
+    const arrow = header.querySelector('.arrow');
+    fila.classList.toggle('abierta');
+    arrow.textContent = fila.classList.contains('abierta') ? '▲' : '▼';
+  }
+
+  function filtrar(estado, btn) {
+    document.querySelectorAll('.filtro').forEach(b => b.classList.remove('activo'));
+    btn.classList.add('activo');
+    document.querySelectorAll('.fila').forEach(f => {
+      if (estado === 'todos' || f.dataset.estado === estado) {
+        f.classList.remove('oculta');
+      } else {
+        f.classList.add('oculta');
+        f.classList.remove('abierta');
+        const arrow = f.querySelector('.arrow');
+        if (arrow) arrow.textContent = '▼';
+      }
+    });
+  }
+</script>
+</body>
+</html>
